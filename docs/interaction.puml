@@ -1,0 +1,24 @@
+@startuml
+
+start
+
+:User types /start;
+
+
+if (chatId exists in db) then (yes)
+  :Show chat history;
+else (no)
+  :Create new chat in db;
+endif
+
+while (New messages) is (yes)
+  while (Display generated response)
+    if (User selects "regen response") then (yes)
+      :Generate a new response;
+    endif
+  endwhile
+endwhile
+
+stop
+
+@enduml
