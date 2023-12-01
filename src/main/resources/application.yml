@@ -9,11 +9,11 @@ spring:
 
 bot:
   name: spring_telegram_ai_bot
-  token: "6467352851:AAGa7IFMI0bOghx5MeuRj95Xx1WqMqO2HR0"
+  token: ${BOT_TOKEN}
 
 gpt:
   url: "https://api.openai.com/v1/chat/completions"
-  token: "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"
+  token: ${GPT_TOKEN}
   model: "gpt-3.5-turbo"
 
 
