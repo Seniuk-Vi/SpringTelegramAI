@@ -8,5 +8,5 @@ import java.util.List;
 public interface ChatService {
     List<ChatEntity> getAll();
     ChatEntity getByChatId(Long chatId);
-    void save(String chatId, Update update);
+    void save(Long chatId, Update update);
 }

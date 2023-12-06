@@ -1,6 +1,7 @@
 package org.brain.springtelegramai.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.*;
 
 import java.sql.Timestamp;
@@ -10,7 +11,8 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@Entity
+@Builder
+@Entity(name = "chats")
 public class ChatEntity {
 
     @Id

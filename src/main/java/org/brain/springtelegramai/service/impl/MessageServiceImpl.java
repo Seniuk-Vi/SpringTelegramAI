@@ -18,8 +18,8 @@ public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
 
     @Override
-    public MessageEntity saveMessage(MessageEntity messageEntity) {
-        return messageRepository.save(messageEntity);
+    public void saveMessage(MessageEntity messageEntity) {
+        messageRepository.save(messageEntity);
     }
 
     @Override
@@ -34,16 +34,17 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public List<MessageEntity> getAllGPTConversationByChatId(Long chatId) {
+    public List<MessageEntity> getGPTConversationByChatId(Long chatId) {
         return messageRepository.findGPTConversationByUser_ChatIdOrderByCreatedAsc(
                 chatId);
     }
 
     @Override
-    public List<MessageEntity> getAllByChatId(Long chatId) {
+    public List<MessageEntity> getAllConversationByChatId(Long chatId) {
         return messageRepository.findByChat_ChatIdOrderByCreatedAsc(
                 chatId, Sort.by(Sort.Direction.ASC, "created"));
     }
+
 
     @Override
     @Transactional

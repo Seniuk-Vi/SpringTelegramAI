@@ -6,12 +6,12 @@ import java.util.List;
 
 public interface MessageService {
 
-    MessageEntity saveMessage(MessageEntity messageEntity);
+    void saveMessage(MessageEntity messageEntity);
     void deleteLastAssistantMessageByChatId(Long chatId);
     MessageEntity getLastAssistantMessageByChatId(Long chatId);
 
-    List<MessageEntity> getAllGPTConversationByChatId(Long chatId);
-    List<MessageEntity> getAllByChatId(Long chatId);
+    List<MessageEntity> getGPTConversationByChatId(Long chatId);
+    List<MessageEntity> getAllConversationByChatId(Long chatId);
 
     void deleteAllByChatId(Long chatId);
 

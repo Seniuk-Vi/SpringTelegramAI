@@ -5,6 +5,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -18,9 +19,9 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
      * @return Optional <{@link MessageEntity}>
      */
     @Query("""
-                    SELECT m FROM MessageEntity m\s
+                    SELECT m FROM messages m\s
                     WHERE m.chat.chatId = :chatId\s
-                            AND m.role = org.brain.springtelegramai.payload.GptRole.assistant\s
+                            AND m.role = org.brain.springtelegramai.model.ChatRole.assistant\s
                     ORDER BY m.created DESC\s
                     LIMIT 1
             """)
@@ -32,10 +33,10 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long> {
      *
      */
     @Query("""
-                    SELECT m FROM MessageEntity m\s
+                    SELECT m FROM messages m\s
                     WHERE m.chat.chatId = :chatId\s
-                            AND (m.role = org.brain.springtelegramai.payload.GptRole.assistant\s
-                            OR m.role = org.brain.springtelegramai.payload.GptRole.user)\s
+                            AND (m.role = org.brain.springtelegramai.model.ChatRole.assistant\s
+                            OR m.role = org.brain.springtelegramai.model.ChatRole.user)\s
                     ORDER BY m.created ASC
             """)
     List<MessageEntity> findGPTConversationByUser_ChatIdOrderByCreatedAsc(Long chatId);

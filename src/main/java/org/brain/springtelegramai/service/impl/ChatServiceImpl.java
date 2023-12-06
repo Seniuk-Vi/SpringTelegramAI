@@ -27,8 +27,8 @@ public class ChatServiceImpl implements ChatService {
         return userRepository.findByChatId(chatId).orElseThrow();
     }
 
-    public void save(String chatId, Update update) {
-        userRepository.findByChatId(Long.parseLong(chatId))
+    public void save(Long chatId, Update update) {
+        userRepository.findByChatId(chatId)
                 .ifPresentOrElse(
                         userEntity -> {
                             userEntity.setFirstName(update.getMessage().getChat().getFirstName());
@@ -38,7 +38,7 @@ public class ChatServiceImpl implements ChatService {
                         },
                         () -> userRepository.save(
                                 new ChatEntity(
-                                        Long.parseLong(chatId),
+                                        chatId,
                                         update.getMessage().getChat().getFirstName(),
                                         update.getMessage().getChat().getLastName(),
                                         update.getMessage().getChat().getUserName(),

@@ -2,17 +2,17 @@ package org.brain.springtelegramai.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.brain.springtelegramai.payload.GptRole;
 
 import java.time.LocalDateTime;
+
 
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@Entity
 @Builder
+@Entity(name = "messages")
 public class MessageEntity {
 
     @Id
@@ -25,6 +25,6 @@ public class MessageEntity {
     private ChatEntity chat;
     @Column(columnDefinition = "TEXT")
     private String content;
-    private GptRole role;
+    private ChatRole role;
     private LocalDateTime created;
 }
