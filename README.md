@@ -6,7 +6,6 @@
 - [ ] Use Oauth2 Authorization Server with Authorization Client
 - [ ] Use WebHook instead of polling
 - [ ] Use Markups
-- [ ] Use Spring Cloud Config Server
-- [ ] Use @Transactional in TelegramGPTBot
+- [x] Use transactions in TelegramGPTBot
 - [ ] Add error handling to WebClient
-- [ ] Fix regen messages - only new messages can do it!
+- [x] Fix regen messages - only new messages can do it!

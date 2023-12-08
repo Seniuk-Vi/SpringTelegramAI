@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,15 +23,10 @@ public class MessageServiceImpl implements MessageService {
         messageRepository.save(messageEntity);
     }
 
-    @Override
-    public void deleteLastAssistantMessageByChatId(Long chatId) {
-        MessageEntity lastMessage = getLastAssistantMessageByChatId(chatId);
-        messageRepository.delete(lastMessage);
-    }
 
     @Override
-    public MessageEntity getLastAssistantMessageByChatId(Long chatId) {
-        return messageRepository.findLatestAssistantMessageByChatId(chatId).orElseThrow();
+    public Optional<MessageEntity> getLastAssistantMessageByChatId(Long chatId) {
+        return messageRepository.findLatestAssistantMessageByChatId(chatId);
     }
 
     @Override

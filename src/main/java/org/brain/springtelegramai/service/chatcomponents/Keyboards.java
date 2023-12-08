@@ -31,7 +31,6 @@ public class Keyboards {
         row.add(InlineKeyboardButton.builder()
                 .text(REGENERATE_MESSAGE_BUTTON)
                 .callbackData(REGENERATE_MESSAGE_BUTTON_DATA)
-
                 .build());
         return InlineKeyboardMarkup.builder()
                 .keyboardRow(row)

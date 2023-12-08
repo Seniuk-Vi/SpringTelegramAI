@@ -2,6 +2,7 @@ package org.brain.springtelegramai.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.brain.springtelegramai.config.BotConfig;
+import org.brain.springtelegramai.exception.MessageNotSentException;
 import org.brain.springtelegramai.exception.UnchangedResponseException;
 import org.brain.springtelegramai.model.ChatRole;
 import org.brain.springtelegramai.model.MessageEntity;
@@ -13,6 +14,9 @@ import org.brain.springtelegramai.service.GptService;
 import org.brain.springtelegramai.service.MessageService;
 import org.brain.springtelegramai.service.TelegramBot;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ActionType;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -20,15 +24,19 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.brain.springtelegramai.service.chatcomponents.Keyboards.*;
@@ -39,6 +47,9 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
     private final ChatService chatService;
     private final MessageService messageService;
     private final GptService chatGptService;
+
+    private final TransactionTemplate transactionTemplate;
+
     private static final String HELP_TEXT = """
             This bot is designed to help interact with ChatGPT
                         
@@ -49,13 +60,14 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
             """;
     private final BotConfig botConfig;
 
-    public TelegramGPTBot(BotConfig botConfig, ChatService chatService, GptService chatGptService, MessageService messageService) {
+    public TelegramGPTBot(BotConfig botConfig, ChatService chatService, GptService chatGptService, MessageService messageService, TransactionTemplate transactionTemplate) {
         super(botConfig.getToken());
 
         this.botConfig = botConfig;
         this.chatService = chatService;
         this.chatGptService = chatGptService;
         this.messageService = messageService;
+        this.transactionTemplate = transactionTemplate;
 
         setMyCommands();
     }
@@ -63,13 +75,9 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String message = update.getMessage().getText();
-            Long chatId = update.getMessage().getChatId();
-            onMessageReceived(update, message, chatId);
+            onMessageReceived(update.getMessage());
         } else if (update.hasCallbackQuery()) {
-            long messageId = update.getCallbackQuery().getMessage().getMessageId();
-            Long chatId = update.getCallbackQuery().getMessage().getChatId();
-            onCallbackReceived(update, chatId, messageId);
+            onCallbackReceived(update);
         }
     }
 
@@ -88,107 +96,131 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
     }
 
 
-    private void onCallbackReceived(Update update, Long chatId, long messageId) {
+    private void onCallbackReceived(Update update) {
         switch (update.getCallbackQuery().getData()) {
-            case REGENERATE_MESSAGE_BUTTON_DATA -> regenGptMessage(chatId, messageId);
-            default -> sendMessage(chatId, "Sorry, I don't understand you.");
+            case REGENERATE_MESSAGE_BUTTON_DATA ->
+                    regenGptMessage(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getMessage().getMessageId());
+           default ->
+                    sendMessage(update.getCallbackQuery().getMessage().getChatId(), "Sorry, I don't understand you.");
         }
     }
 
-    private void onMessageReceived(Update update, String message, Long chatId) {
-        if (message.equals(NEW_CHAT_TEXT)) {
-            createNewChat(chatId, update);
+
+    private void onMessageReceived(Message message) {
+        Long chatId = message.getChatId();
+        String text = message.getText();
+        if (text.equals(NEW_CHAT_TEXT)) {
+            createNewChat(message.getChat());
         } else {
-            switch (message) {
-                case "/start" -> createNewChat(chatId, update);
+            switch (text) {
+                case "/start" -> createNewChat(message.getChat());
                 case "/help" -> sendMessage(chatId, HELP_TEXT);
                 case "/settings" -> sendMessage(chatId, "Not implemented yet");
-                default -> newGptMessage(chatId, message);
+                default -> newGptMessage(message);
             }
         }
     }
 
-    private void createNewChat(Long chatId, Update update) {
-        chatService.save(chatId, update);
-        messageService.deleteAllByChatId(chatId);
-        greetingMessage(chatId, update);
+    private void createNewChat(Chat chat) {
+        chatService.save(chat);
+        messageService.deleteAllByChatId(chat.getId());
+        greetingMessage(chat);
     }
 
-    private void greetingMessage(Long chatId, Update update) {
-        String answer = "Hello, " +
-                update.getMessage().getChat().getFirstName() +
+    private void greetingMessage(Chat chat) {
+        String message = "Hello, " +
+                chat.getFirstName() +
                 "! " +
                 "I'm " +
                 botConfig.getBotName() +
                 ". " +
                 "How can I help you?";
-        sendMessage(chatId, answer, getReplyKeyboardMarkup());
+        sendMessage(chat.getId(), message, getReplyKeyboardMarkup());
     }
 
-    public void newGptMessage(Long chatId, String content) {
-        typingAction(chatId);
-        // gather history
-        List<MessageEntity> historyMessages = messageService.getGPTConversationByChatId(chatId);
-        // create request
-        GptRequest chatGptRequest = GptRequest.builder()
-                .messages(historyMessages
-                        .stream()
-                        .map(message -> new GptMessage(message.getRole(), message.getContent()))
-                        .collect(Collectors.toList()))
-                .build();
-        chatGptRequest.getMessages().add(new GptMessage(ChatRole.user, content));
-        // send message to gpt
-        GptResponse chatGptResponse = chatGptService.newMessage(chatGptRequest);
-        // save response and request to db
-        var chat = chatService.getByChatId(chatId);
-        messageService.saveMessage(MessageEntity.builder()
-                .chat(chat)
-                .content(content)
-                .role(ChatRole.user)
-                .created(LocalDateTime.now())
-                .build());
-        messageService.saveMessage(MessageEntity.builder()
-                .chat(chat)
-                .content(chatGptResponse.getChoices().get(0).getMessage().getContent())
-                .role(ChatRole.assistant)
-                .created(LocalDateTime.now())
-                .build());
-        // send response to chat
-        sendMessage(chatId, chatGptResponse.getChoices().get(0).getMessage().getContent(),
-                getRegisterInlineKeyboardMarkup());
+    public void newGptMessage(Message message) {
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                typingAction(message.getChatId());
+                // remove inline keyboard from last assistant message
+                removeInlineKeyboardFromLastAssistantMessage(message);
+                // gather history
+                List<MessageEntity> historyMessages = messageService.getGPTConversationByChatId(message.getChatId());
+                // create request
+                GptRequest chatGptRequest = GptRequest.builder()
+                        .messages(historyMessages
+                                .stream()
+                                .map(historyMessage -> new GptMessage(historyMessage.getRole(), historyMessage.getContent()))
+                                .collect(Collectors.toList()))
+                        .build();
+                chatGptRequest.getMessages().add(new GptMessage(ChatRole.user, message.getText()));
+                // send message to gpt
+                GptResponse chatGptResponse = chatGptService.newMessage(chatGptRequest);
+                // send response to chat
+                Message sentMessage = sendMessage(message.getChatId(), chatGptResponse.getChoices().get(0).getMessage().getContent(),
+                        getRegisterInlineKeyboardMarkup());
+                // save response and request to db
+                var chat = chatService.getByChatId(message.getChatId());
+                messageService.saveMessage(MessageEntity.builder()
+                        .chat(chat)
+                        .chatMessageId(message.getMessageId())
+                        .content(message.getText())
+                        .role(ChatRole.user)
+                        .created(LocalDateTime.now())
+                        .build());
+                messageService.saveMessage(MessageEntity.builder()
+                        .chat(chat)
+                        .chatMessageId(sentMessage.getMessageId())
+                        .content(chatGptResponse.getChoices().get(0).getMessage().getContent())
+                        .role(ChatRole.assistant)
+                        .created(LocalDateTime.now())
+                        .build());
+            }
+        });
     }
 
-    public void regenGptMessage(Long chatId, Long messageId) {
-        typingAction(chatId);
-        // get last assistant response
-        var lastAssistantMessage = messageService.getLastAssistantMessageByChatId(chatId);
-        // delete last assistant response from db
-        messageService.deleteLastAssistantMessageByChatId(chatId);
-        // get history
-        List<MessageEntity> historyMessages = messageService.getGPTConversationByChatId(chatId);
-        GptRequest chatGptRequest = GptRequest.builder()
-                .messages(historyMessages
-                        .stream()
-                        .map(message -> new GptMessage(message.getRole(), message.getContent()))
-                        .collect(Collectors.toList()))
-                .build();
-        // send message to gpt
-        GptResponse chatGptResponse = chatGptService.newMessage(chatGptRequest);
-        // check if response is unchanged
-        if (lastAssistantMessage.getContent().equals(chatGptResponse.getChoices().get(0).getMessage().getContent())) {
-            throw new UnchangedResponseException("Gpt response is unchanged");
+    private void removeInlineKeyboardFromLastAssistantMessage(Message message) {
+        Optional<MessageEntity> lastMessageOptional = messageService.getLastAssistantMessageByChatId(message.getChatId());
+        if (lastMessageOptional.isEmpty()) {
+            return;
         }
-        // save to db
-        var chat = chatService.getByChatId(chatId);
-        messageService.saveMessage(MessageEntity.builder()
-                .chat(chat)
-                .content(chatGptResponse.getChoices().get(0).getMessage().getContent())
-                .role(ChatRole.assistant)
-                .created(LocalDateTime.now())
-                .build());
-        var response = chatGptResponse.getChoices().get(0).getMessage().getContent();
-        // edit chat message
-        editMessage(chatId, messageId, response);
+        MessageEntity lastMessage = lastMessageOptional.get();
+        editMessage(message.getChatId(), lastMessage.getChatMessageId(), lastMessage.getContent(), null);
+    }
+
+    public void regenGptMessage(Long chatId, Integer messageId) {
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                typingAction(chatId);
+                // get last assistant response
+                MessageEntity lastAssistantMessage = messageService.getLastAssistantMessageByChatId(chatId).orElseThrow();
+                // get history
+                List<MessageEntity> historyMessages = messageService.getGPTConversationByChatId(chatId);
+                GptRequest chatGptRequest = GptRequest.builder()
+                        .messages(historyMessages
+                                .stream()
+                                .map(message -> new GptMessage(message.getRole(), message.getContent()))
+                                .collect(Collectors.toList()))
+                        .build();
+                // remove last assistant message
+                chatGptRequest.getMessages().remove(chatGptRequest.getMessages().size() - 1);
+                // send message to gpt
+                GptResponse chatGptResponse = chatGptService.newMessage(chatGptRequest);
+                // check if response is unchanged
+                if (lastAssistantMessage.getContent().equals(chatGptResponse.getChoices().get(0).getMessage().getContent())) {
+                    throw new UnchangedResponseException("Gpt response is unchanged");
+                }
+                // edit chat message
+                var response = chatGptResponse.getChoices().get(0).getMessage().getContent();
+                editMessage(chatId, messageId, response, getRegisterInlineKeyboardMarkup());
+                // update to db
+                lastAssistantMessage.setContent(response);
+                lastAssistantMessage.setCreated(LocalDateTime.now());
+                messageService.saveMessage(lastAssistantMessage);
+            }
+        });
     }
 
     private void typingAction(Long chatId) {
@@ -199,12 +231,12 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
         executeMessage(sendChatAction);
     }
 
-    private void editMessage(Long chatId, long messageId, String message) {
+    private void editMessage(Long chatId, long messageId, String message, InlineKeyboardMarkup replyKeyboardMarkup) {
         EditMessageText editMessage = EditMessageText.builder()
                 .chatId(chatId)
                 .messageId(Math.toIntExact(messageId))
                 .text(message)
-                .replyMarkup(getRegisterInlineKeyboardMarkup())
+                .replyMarkup(replyKeyboardMarkup)
                 .build();
         executeMessage(editMessage);
     }
@@ -223,16 +255,32 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
         executeMessage(sendMessage);
     }
 
-    private void sendMessage(Long chatId, String message, ReplyKeyboard replyKeyboardMarkup) {
+    private Message sendMessage(Long chatId, String message, ReplyKeyboard replyKeyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText(message);
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
-        executeMessage(sendMessage);
+        return executeMessage(sendMessage);
     }
 
     /**
-     * This method is general method to send messages and catch exceptions.
+     * This method is general method to send messages.
+     *
+     * @param sendMessage SendMessage to send
+     * @return Message that was sent
+     * @throws MessageNotSentException if message was not sent
+     */
+    private Message executeMessage(SendMessage sendMessage) {
+        try {
+            return execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Error while sending message: {}", e.getMessage());
+            throw new MessageNotSentException("Error while sending message", e);
+        }
+    }
+
+    /**
+     * This method is general method to send messages.
      *
      * @param message BotApiMethod to send
      */
@@ -241,6 +289,7 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
             execute(message);
         } catch (TelegramApiException e) {
             log.error("Error while sending message: {}", e.getMessage());
+            throw new MessageNotSentException("Error while sending message", e);
         }
     }
 
