@@ -3,7 +3,7 @@ spring:
     hibernate:
       ddl-auto: update
   datasource:
-    url: jdbc:postgresql://localhost:5432/telegram_ai_bot
+    url: ${DB_URL:jdbc:postgresql://spring-telegram-ai.co7yhuc52rns.eu-central-1.rds.amazonaws.com:5432/spring_telegram_ai}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
 
