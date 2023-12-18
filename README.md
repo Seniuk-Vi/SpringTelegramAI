@@ -2,6 +2,8 @@
 
 SpringTelegramAI is a Spring Boot application that uses Telegram Bot API to interact with ChatGPT.
 
+![interaction](/docs/interaction.png)
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
@@ -43,10 +45,12 @@ mvn spring-boot:run
 - [ ] Decouple monolith with microservices (Telegram service, Auth service, Admin service)
 - [ ] Use Oauth2 Authorization Server with Authorization Client
 - [ ] Use WebHook instead of polling
-- [ ] Use Markups
+- [x] Use Markdown
 - [x] Use transactions in TelegramGPTBot
 - [ ] Add error handling to WebClient
+- [ ] Add error handling to @TelegramAdvice
 - [x] Fix regen messages - only new messages can do it!
+- [ ] Fix removeInlineKeyboardFromLastAssistantMessage - handle MessageNotSentException when there is no inline keyboard in message
 
 ## Usage
 
@@ -55,7 +59,5 @@ This code is for personal use and learning purposes only. Unauthorized or commer
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](/license.txt) file for details.
-
-![interaction](/docs/interaction.png)
 
 

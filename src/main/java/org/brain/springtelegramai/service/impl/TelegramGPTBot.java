@@ -13,6 +13,7 @@ import org.brain.springtelegramai.service.ChatService;
 import org.brain.springtelegramai.service.GptService;
 import org.brain.springtelegramai.service.MessageService;
 import org.brain.springtelegramai.service.TelegramBot;
+import org.brain.springtelegramai.utils.TelegramUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
@@ -20,6 +21,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ActionType;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -47,6 +49,7 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
     private final ChatService chatService;
     private final MessageService messageService;
     private final GptService chatGptService;
+    private final TelegramUtils telegramUtils;
 
     private final TransactionTemplate transactionTemplate;
 
@@ -60,7 +63,9 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
             """;
     private final BotConfig botConfig;
 
-    public TelegramGPTBot(BotConfig botConfig, ChatService chatService, GptService chatGptService, MessageService messageService, TransactionTemplate transactionTemplate) {
+    public TelegramGPTBot(BotConfig botConfig, ChatService chatService, GptService chatGptService,
+                          MessageService messageService, TransactionTemplate transactionTemplate,
+                          TelegramUtils telegramUtils) {
         super(botConfig.getToken());
 
         this.botConfig = botConfig;
@@ -68,6 +73,7 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
         this.chatGptService = chatGptService;
         this.messageService = messageService;
         this.transactionTemplate = transactionTemplate;
+        this.telegramUtils = telegramUtils;
 
         setMyCommands();
     }
@@ -100,7 +106,7 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
         switch (update.getCallbackQuery().getData()) {
             case REGENERATE_MESSAGE_BUTTON_DATA ->
                     regenGptMessage(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getMessage().getMessageId());
-           default ->
+            default ->
                     sendMessage(update.getCallbackQuery().getMessage().getChatId(), "Sorry, I don't understand you.");
         }
     }
@@ -185,6 +191,7 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
         if (lastMessageOptional.isEmpty()) {
             return;
         }
+        log.info("Removing inline keyboard from last assistant message - {}", lastMessageOptional.get().getContent());
         MessageEntity lastMessage = lastMessageOptional.get();
         editMessage(message.getChatId(), lastMessage.getChatMessageId(), lastMessage.getContent(), null);
     }
@@ -231,11 +238,12 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
         executeMessage(sendChatAction);
     }
 
-    private void editMessage(Long chatId, long messageId, String message, InlineKeyboardMarkup replyKeyboardMarkup) {
+    private void editMessage(Long chatId, Integer messageId, String message, InlineKeyboardMarkup replyKeyboardMarkup) {
         EditMessageText editMessage = EditMessageText.builder()
                 .chatId(chatId)
-                .messageId(Math.toIntExact(messageId))
-                .text(message)
+                .messageId(messageId)
+                .text(telegramUtils.escapeMarkdownV2(message))
+                .parseMode(ParseMode.MARKDOWNV2)
                 .replyMarkup(replyKeyboardMarkup)
                 .build();
         executeMessage(editMessage);
@@ -251,14 +259,15 @@ public class TelegramGPTBot extends TelegramLongPollingBot implements TelegramBo
     public void sendMessage(Long chatId, String message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        sendMessage.setText(message);
+        sendMessage.setText(telegramUtils.escapeMarkdownV2(message));
         executeMessage(sendMessage);
     }
 
     private Message sendMessage(Long chatId, String message, ReplyKeyboard replyKeyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        sendMessage.setText(message);
+        sendMessage.setText(telegramUtils.escapeMarkdownV2(message));
+        sendMessage.enableMarkdownV2(true);
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
         return executeMessage(sendMessage);
     }
