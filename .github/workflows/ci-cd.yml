@@ -2,6 +2,9 @@ name: Deploy to AWS ECS
 on:
   push:
     branches: [ deploy-to-ecs ]
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
 jobs:
   build-and-deploy:
     runs-on: [ ubuntu-latest ]
@@ -19,7 +22,7 @@ jobs:
         run: mvn clean install -DskipTests
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::312473170049:role/GithubActionsRole
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
