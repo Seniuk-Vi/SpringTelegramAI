@@ -52,7 +52,7 @@ jobs:
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: SpringTelegramAITaskDefinition.json
+          task-definition: SpringTelegramAITaskDefinition-revision.json
           container-name: SpringTelegramAI
           image: ${{ steps.build-image.outputs.image }}
 
