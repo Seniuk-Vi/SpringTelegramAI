@@ -1,0 +1,28 @@
+FROM openjdk:17-jdk-slim
+LABEL authors="Vitalii Seniuk"
+
+ARG JAR_FILE=target/*.jar
+ARG JWT_SECRET
+ARG JWT_LIFETIME
+ARG JWT_ISSUER
+ARG DB_URL
+ARG DB_USERNAME
+ARG DB_PASSWORD
+ARG BOT_TOKEN
+ARG GPT_TOKEN
+ARG CORS_ALLOWED_ORIGIN
+
+# Set environment variables from build-time arguments
+ENV JWT_SECRET=$JWT_SECRET \
+    JWT_LIFETIME=$JWT_LIFETIME \
+    JWT_ISSUER=$JWT_ISSUER \
+    DB_URL=$DB_URL \
+    DB_USERNAME=$DB_USERNAME \
+    DB_PASSWORD=$DB_PASSWORD \
+    BOT_TOKEN=$BOT_TOKEN \
+    GPT_TOKEN=$GPT_TOKEN \
+    CORS_ALLOWED_ORIGIN=$CORS_ALLOWED_ORIGIN
+
+COPY ${JAR_FILE} user-service.jar
+
+ENTRYPOINT ["java", "-jar", "/user-service.jar"]
