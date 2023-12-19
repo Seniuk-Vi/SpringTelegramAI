@@ -15,12 +15,7 @@
                 }
             ],
             "essential": true,
-            "environment": [
-                {
-                    "name": "JWT_LIFETIME",
-                    "value": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_LIFETIME"
-                }
-            ],
+            "environment": [],
             "mountPoints": [],
             "volumesFrom": [],
             "secrets": [
@@ -55,6 +50,10 @@
                 {
                     "name": "JWT_SECRET",
                     "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_SECRET"
+                },
+                {
+                    "name": "JWT_LIFETIME",
+                    "value": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_LIFETIME"
                 }
             ],
             "logConfiguration": {
