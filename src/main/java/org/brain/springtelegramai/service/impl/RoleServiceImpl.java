@@ -13,11 +13,11 @@ public record RoleServiceImpl(RoleRepository roleRepository) implements RoleServ
 
     @Override
     public RoleEntity userRole(){
-        return roleRepository.findByName(USER_ROLE).orElse(roleRepository.save(RoleEntity.builder().name(USER_ROLE).build()));
+        return roleRepository.findByName(USER_ROLE).orElseGet(() -> roleRepository.save(RoleEntity.builder().name(USER_ROLE).build()));
     }
 
     @Override
     public RoleEntity adminRole(){
-        return roleRepository.findByName(ADMIN_ROLE).orElse(roleRepository.save(RoleEntity.builder().name(ADMIN_ROLE).build()));
+        return roleRepository.findByName(ADMIN_ROLE).orElseGet(() -> roleRepository.save(RoleEntity.builder().name(ADMIN_ROLE).build()));
     }
 }
