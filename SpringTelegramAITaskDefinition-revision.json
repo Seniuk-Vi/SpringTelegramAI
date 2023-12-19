@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:eu-central-1:312473170049:task-definition/SpringTelegramAITaskDefinition:7",
+    "taskDefinitionArn": "arn:aws:ecs:eu-central-1:312473170049:task-definition/SpringTelegramAITaskDefinition:11",
     "containerDefinitions": [
         {
             "name": "SpringTelegramAI",
-            "image": "312473170049.dkr.ecr.eu-central-1.amazonaws.com/spring-telegram-ai:c14504b1de51a7b2c4cf6155e8ce752d64015a74",
+            "image": "312473170049.dkr.ecr.eu-central-1.amazonaws.com/spring-telegram-ai:e68e5735eddaab611c9bd846bd617878f8f93a71",
             "cpu": 0,
             "portMappings": [
                 {
@@ -17,44 +17,46 @@
             "essential": true,
             "environment": [
                 {
-                    "name": "GPT_TOKEN",
-                    "value": "6467352851:AAHWkuq0fmpJ6h7zMEqCQyDozZqx3OU2yrU"
-                },
-                {
-                    "name": "CORS_ALLOWED_ORIGIN",
-                    "value": "http://localhost:3000"
-                },
-                {
-                    "name": "DB_USERNAME",
-                    "value": "postgres"
-                },
-                {
-                    "name": "JWT_SECRET",
-                    "value": "413F4428472B4B6250655368566D5970337336763979244226452948404D63512"
-                },
-                {
-                    "name": "DB_URL",
-                    "value": "jdbc:postgresql://spring-telegram-ai.co7yhuc52rns.eu-central-1.rds.amazonaws.com:5432/spring_telegram_ai"
-                },
-                {
                     "name": "JWT_LIFETIME",
-                    "value": "3600000"
-                },
-                {
-                    "name": "JWT_ISSUER",
-                    "value": "user_service"
-                },
-                {
-                    "name": "DB_PASSWORD",
-                    "value": "postgres"
-                },
-                {
-                    "name": "BOT_TOKEN",
-                    "value": "6467352851:AAHWkuq0fmpJ6h7zMEqCQyDozZqx3OU2yrU"
+                    "value": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_LIFETIME"
                 }
             ],
             "mountPoints": [],
             "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "BOT_TOKEN",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/BOT_TOKEN"
+                },
+                {
+                    "name": "CORS_ALLOWED_ORIGIN",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/CORS_ALLOWED_ORIGIN"
+                },
+                {
+                    "name": "DB_PASSWORD",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/DB_PASSWORD"
+                },
+                {
+                    "name": "DB_URL",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/DB_URL"
+                },
+                {
+                    "name": "DB_USERNAME",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/DB_USERNAME"
+                },
+                {
+                    "name": "GPT_TOKEN",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/GPT_TOKEN"
+                },
+                {
+                    "name": "JWT_ISSUER",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_ISSUER"
+                },
+                {
+                    "name": "JWT_SECRET",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_SECRET"
+                }
+            ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
@@ -71,7 +73,7 @@
     "taskRoleArn": "arn:aws:iam::312473170049:role/ECSTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::312473170049:role/ECSTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 7,
+    "revision": 11,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -92,6 +94,9 @@
         },
         {
             "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "ecs.capability.secrets.ssm.environment-variables"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
@@ -117,7 +122,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2023-12-18T15:30:17.929Z",
+    "registeredAt": "2023-12-19T09:03:22.783Z",
     "registeredBy": "arn:aws:iam::312473170049:root",
     "tags": []
 }
