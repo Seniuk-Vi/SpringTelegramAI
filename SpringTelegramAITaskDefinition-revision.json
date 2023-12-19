@@ -53,7 +53,7 @@
                 },
                 {
                     "name": "JWT_LIFETIME",
-                    "value": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_LIFETIME"
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_LIFETIME"
                 }
             ],
             "logConfiguration": {
