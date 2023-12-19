@@ -3,6 +3,7 @@
 SpringTelegramAI is a Spring Boot application that uses Telegram Bot API to interact with ChatGPT.
 
 ![interaction](/docs/interaction.png)
+![deploy to ecs](/docs/deploy-to-ecs.png)
 
 ## Getting Started
 
