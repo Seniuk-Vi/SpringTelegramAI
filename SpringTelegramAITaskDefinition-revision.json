@@ -1,10 +1,11 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:eu-central-1:312473170049:task-definition/SpringTelegramAITaskDefinition:11",
+    "taskDefinitionArn": "arn:aws:ecs:eu-central-1:312473170049:task-definition/SpringTelegramAITaskDefinition:22",
     "containerDefinitions": [
         {
             "name": "SpringTelegramAI",
-            "image": "312473170049.dkr.ecr.eu-central-1.amazonaws.com/spring-telegram-ai:e68e5735eddaab611c9bd846bd617878f8f93a71",
+            "image": "312473170049.dkr.ecr.eu-central-1.amazonaws.com/spring-telegram-ai:13798837a2b8f67909c65c9038b4276cf821d870",
             "cpu": 0,
+            "memory": 2048,
             "portMappings": [
                 {
                     "name": "springtelegramai-8080-tcp",
@@ -48,12 +49,12 @@
                     "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_ISSUER"
                 },
                 {
-                    "name": "JWT_SECRET",
-                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_SECRET"
-                },
-                {
                     "name": "JWT_LIFETIME",
                     "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_LIFETIME"
+                },
+                {
+                    "name": "JWT_SECRET",
+                    "valueFrom": "arn:aws:ssm:eu-central-1:312473170049:parameter/JWT_SECRET"
                 }
             ],
             "logConfiguration": {
@@ -65,6 +66,16 @@
                     "awslogs-stream-prefix": "ecs"
                 },
                 "secretOptions": []
+            },
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/actuator/health || exit 1"
+                ],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 30
             }
         }
     ],
@@ -72,7 +83,7 @@
     "taskRoleArn": "arn:aws:iam::312473170049:role/ECSTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::312473170049:role/ECSTaskExecutionRole",
     "networkMode": "awsvpc",
-    "revision": 11,
+    "revision": 22,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -90,6 +101,9 @@
         },
         {
             "name": "com.amazonaws.ecs.capability.task-iam-role"
+        },
+        {
+            "name": "ecs.capability.container-health-check"
         },
         {
             "name": "ecs.capability.execution-role-ecr-pull"
@@ -116,12 +130,12 @@
         "FARGATE"
     ],
     "cpu": "1024",
-    "memory": "3072",
+    "memory": "2048",
     "runtimePlatform": {
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2023-12-19T09:03:22.783Z",
+    "registeredAt": "2023-12-19T10:31:32.923Z",
     "registeredBy": "arn:aws:iam::312473170049:root",
     "tags": []
 }
